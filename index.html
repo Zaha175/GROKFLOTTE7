@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grok's Armee</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #222;
+            font-family: 'Press Start 2P', cursive;
+            color: white;
+        }
+
+        .game-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        canvas {
+            border: 4px solid #5D5CDE;
+            background-color: black;
+            margin-bottom: 10px;
+            cursor: crosshair;
+        }
+
+        .score-display {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 18px;
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+        }
+
+        .game-over h2 {
+            color: #ff4444;
+            margin-top: 0;
+        }
+
+        .game-over button {
+            background-color: #5D5CDE;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .game-over button:hover {
+            background-color: #4a49b7;
+        }
+
+        h1 {
+            color: #5D5CDE;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            margin-top: 10px;
+            text-align: center;
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Grok's Armee</h1>
+        <canvas id="gameCanvas" width="1000" height="700"></canvas>
+        <div class="score-display">Punkte: <span id="score">0</span></div>
+        <div class="game-over" id="gameOverScreen">
+            <h2>Game Over</h2>
+            <p>Deine Punktzahl: <span id="finalScore">0</span></p>
+            <button id="restartButton">Neu starten</button>
+        </div>
+        <div class="controls">
+            Steuerung: Maus zum Bewegen und Klicken zum Schießen<br>
+            Alternativ: Pfeiltasten zum Bewegen, Leertaste zum Schießen
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const restartButton = document.getElementById('restartButton');
+
+        // Spielvariablen
+        let gameActive = true;
+        let score = 0;
+        let mouseX = 0;
+        let mouseY = 0;
+        let useMouseControl = true;
+
+        // Spielerobjekt
+        let player = {
+            x: canvas.width / 2 - 15,
+            y: canvas.height - 50,
+            width: 30,
+            height: 20,
+            speed: 7,
+            dx: 0
+        };
+
+        let bullets = [];
+        let enemies = [];
+
+        // Retro-Arcade-Design für Spieler (einfaches Raumschiff)
+        function drawPlayer() {
+            ctx.fillStyle = '#5D5CDE'; // Grok's Farbe
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(player.x + 5, player.y - 5, 20, 5); // Cockpit
+            ctx.fillRect(player.x + 10, player.y + 20, 10, 5); // Düse
+        }
+
+        // Retro-Arcade-Design für Feinde (pixelige Drohnen)
+        function drawEnemy(enemy) {
+            ctx.fillStyle = '#FF9800';
+            ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(enemy.x + 5, enemy.y + 5, 5, 5); // Auge
+            ctx.fillRect(enemy.x + 20, enemy.y + 5, 5, 5); // Zweites Auge
+        }
+
+        // Retro-Arcade-Design für Kugeln
+        function drawBullet(bullet) {
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+        }
+
+        // Feindliche Drohnen erstellen
+        function createEnemies() {
+            for (let i = 0; i < 10; i++) {
+                for (let j = 0; j < 5; j++) {
+                    enemies.push({
+                        x: i * 80 + 50,
+                        y: j * 50 + 20,
+                        width: 30,
+                        height: 20,
+                        speed: 0.5,
+                        direction: 1 // Für horizontale Bewegung
+                    });
+                }
+            }
+        }
+
+        // Steuerung (Tastatur)
+        document.addEventListener('keydown', (e) => {
+            if (!gameActive) return;
+            if (e.key === 'ArrowLeft') {
+                player.dx = -player.speed;
+                useMouseControl = false;
+            }
+            if (e.key === 'ArrowRight') {
+                player.dx = player.speed;
+                useMouseControl = false;
+            }
+            if (e.key === ' ' && bullets.length < 3) {
+                bullets.push({ x: player.x + player.width / 2 - 2, y: player.y, width: 4, height: 10 });
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                player.dx = 0;
+            }
+        });
+
+        // Maussteuerung
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
+            if (useMouseControl) {
+                player.dx = 0;
+            }
+            useMouseControl = true;
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (!gameActive) return;
+            if (bullets.length < 3) {
+                bullets.push({ x: player.x + player.width / 2 - 2, y: player.y, width: 4, height: 10 });
+                e.preventDefault();
+            }
+        });
+
+        canvas.addEventListener('mouseenter', () => {
+            useMouseControl = true;
+        });
+
+        // Neustart-Button
+        restartButton.addEventListener('click', () => {
+            resetGame();
+        });
+
+        // Kollisionserkennung
+        function detectCollision(rect1, rect2) {
+            return (
+                rect1.x < rect2.x + rect2.width &&
+                rect1.x + rect1.width > rect2.x &&
+                rect1.y < rect2.y + rect2.height &&
+                rect1.y + rect1.height > rect2.y
+            );
+        }
+
+        // Spieler aktualisieren
+        function updatePlayer() {
+            if (useMouseControl) {
+                const targetX = mouseX - player.width / 2;
+                const lerp = 0.2;
+                player.x += (targetX - player.x) * lerp;
+                if (player.x < 0) player.x = 0;
+                if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+            } else {
+                player.x += player.dx;
+                if (player.x < 0) player.x = 0;
+                if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+            }
+            drawPlayer();
+        }
+
+        // Kugeln aktualisieren
+        function updateBullets() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                bullets[i].y -= 8;
+                if (bullets[i].y < 0) {
+                    bullets.splice(i, 1);
+                    continue;
+                }
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    if (bullets[i] && detectCollision(bullets[i], enemies[j])) {
+                        enemies.splice(j, 1);
+                        bullets.splice(i, 1);
+                        score += 10;
+                        scoreDisplay.textContent = score;
+                        break;
+                    }
+                }
+                if (i < bullets.length) drawBullet(bullets[i]);
+            }
+        }
+
+        // Feinde aktualisieren
+        function updateEnemies() {
+            let edgeReached = false;
+            for (let i = 0; i < enemies.length; i++) {
+                enemies[i].x += enemies[i].speed * enemies[i].direction;
+                if (enemies[i].x + enemies[i].width >= canvas.width || enemies[i].x <= 0) {
+                    edgeReached = true;
+                }
+                if (enemies[i].y + enemies[i].height > canvas.height) {
+                    gameActive = false;
+                    gameOver();
+                    return;
+                }
+                if (detectCollision(player, enemies[i])) {
+                    gameActive = false;
+                    gameOver();
+                    return;
+                }
+                drawEnemy(enemies[i]);
+            }
+
+            if (edgeReached) {
+                for (let i = 0; i < enemies.length; i++) {
+                    enemies[i].direction *= -1;
+                    enemies[i].y += 20;
+                    enemies[i].speed += 0.1;
+                }
+            }
+        }
+
+        // Game Over
+        function gameOver() {
+            gameActive = false;
+            finalScoreDisplay.textContent = score;
+            gameOverScreen.style.display = 'block';
+        }
+
+        // Spiel zurücksetzen
+        function resetGame() {
+            gameActive = true;
+            score = 0;
+            scoreDisplay.textContent = score;
+            player.x = canvas.width / 2 - 15;
+            player.y = canvas.height - 50;
+            bullets = [];
+            enemies = [];
+            gameOverScreen.style.display = 'none';
+            createEnemies();
+            gameLoop();
+        }
+
+        // Hauptspielschleife
+        function gameLoop() {
+            if (!gameActive) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            updatePlayer();
+            updateBullets();
+            updateEnemies();
+
+            if (gameActive) requestAnimationFrame(gameLoop);
+        }
+
+        // Spiel starten
+        createEnemies();
+        gameLoop();
+    </script>
+</body>
+</html>
