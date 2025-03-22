@@ -7,15 +7,15 @@
     <style>
         body {
             margin: 0;
-            padding: 20px; /* Platz oben und unten */
+            padding: 20px;
             display: flex;
             justify-content: center;
-            align-items: flex-start; /* Oben starten statt mittig */
-            min-height: 100vh; /* Mindesthöhe statt feste Höhe */
-            background-color: #222;
+            align-items: flex-start;
+            min-height: 100vh;
+            background-color: #000; /* Schwarz wie Space Invaders */
             font-family: 'Press Start 2P', cursive;
             color: white;
-            overflow: auto; /* Scrollen erlauben */
+            overflow: auto;
         }
 
         .game-container {
@@ -24,18 +24,18 @@
             flex-direction: column;
             align-items: center;
             width: 100%;
-            max-width: 1000px; /* Maximale Breite */
+            max-width: 800px; /* Kleinerer Container */
         }
 
         canvas {
-            border: 4px solid #5D5CDE;
+            border: 4px solid #00ff00; /* Grüner Rand wie bei alten CRTs */
             background-color: black;
             margin-bottom: 10px;
             cursor: crosshair;
-            width: 100%; /* Responsive Breite */
-            max-width: 1000px; /* Max Breite */
-            height: auto; /* Höhe proportional */
-            aspect-ratio: 10 / 7; /* Verhältnis 1000x700 beibehalten */
+            width: 100%;
+            max-width: 800px; /* Kleinere Breite */
+            height: auto;
+            aspect-ratio: 4 / 3; /* Verhältnis 800x600 */
             position: relative;
             overflow: hidden;
         }
@@ -50,34 +50,34 @@
             background: repeating-linear-gradient(
                 transparent 0px,
                 transparent 2px,
-                rgba(0, 0, 0, 0.2) 2px,
-                rgba(0, 0, 0, 0.2) 4px
-            ); /* Simulierte CRT-Scanlines */
-            pointer-events: none; /* Maus/Touch nicht blockieren */
+                rgba(0, 0, 0, 0.3) 2px,
+                rgba(0, 0, 0, 0.3) 4px
+            );
+            pointer-events: none;
         }
 
         .score-display {
             position: absolute;
             top: 10px;
             left: 10px;
-            color: white;
-            font-size: 18px;
+            color: #00ff00; /* Grün wie Space Invaders */
+            font-size: 16px;
         }
 
         .lives-display {
             position: absolute;
             top: 10px;
             right: 10px;
-            color: white;
-            font-size: 18px;
+            color: #00ff00;
+            font-size: 16px;
         }
 
         .highscore-display {
             position: absolute;
             top: 40px;
             left: 10px;
-            color: white;
-            font-size: 18px;
+            color: #00ff00;
+            font-size: 16px;
         }
 
         .game-over {
@@ -97,9 +97,13 @@
             margin-top: 0;
         }
 
+        .game-over p {
+            color: #00ff00;
+        }
+
         .game-over button {
-            background-color: #5D5CDE;
-            color: white;
+            background-color: #00ff00;
+            color: black;
             border: none;
             padding: 10px 20px;
             margin-top: 15px;
@@ -110,14 +114,14 @@
         }
 
         .game-over button:hover {
-            background-color: #4a49b7;
+            background-color: #00cc00;
         }
 
         h1 {
-            color: #5D5CDE;
+            color: #00ff00;
             text-align: center;
             margin-bottom: 20px;
-            text-shadow: 2px 2px #ff00ff; /* Neon-Retro-Schatten */
+            text-shadow: 2px 2px #ff00ff;
         }
 
         .controls {
@@ -133,7 +137,7 @@
 <body>
     <div class="game-container">
         <h1>Grok's Armee</h1>
-        <canvas id="gameCanvas" width="1000" height="700"></canvas>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
         <div class="score-display">Punkte: <span id="score">0</span></div>
         <div class="lives-display">Leben: <span id="lives">3</span></div>
         <div class="highscore-display">Highscore: <span id="highscore">0</span></div>
@@ -169,14 +173,14 @@
         let wave = 1;
         let playerHitTimer = 0;
         let shieldTimer = 0;
-        let shootCooldown = 30; // Standard-Schuss-Cooldown (Frames)
+        let shootCooldown = 30;
         let shootTimer = 0;
 
         // Spielerobjekt
         let player = {
             x: canvas.width / 2 - 15,
             y: canvas.height - 50,
-            width: 30,
+            width: 40,
             height: 20,
             speed: 7,
             dx: 0
@@ -209,7 +213,7 @@
             oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
             gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
             oscillator.start();
-            oscillator.stop(audioContext.currentTime + 0.05); // Kürzer und knackiger
+            oscillator.stop(audioContext.currentTime + 0.05);
         }
 
         // Sound für Treffer
@@ -223,7 +227,7 @@
             oscillator.frequency.setValueAtTime(150, audioContext.currentTime);
             gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
             oscillator.start();
-            oscillator.stop(audioContext.currentTime + 0.15); // Tiefer und rauer
+            oscillator.stop(audioContext.currentTime + 0.15);
         }
 
         // Sound für Game Over
@@ -257,8 +261,8 @@
         // Canvas skalieren
         function resizeCanvas() {
             const container = document.querySelector('.game-container');
-            const maxWidth = Math.min(container.clientWidth, 1000);
-            const aspectRatio = 700 / 1000;
+            const maxWidth = Math.min(container.clientWidth, 800);
+            const aspectRatio = 600 / 800;
             canvas.width = maxWidth;
             canvas.height = maxWidth * aspectRatio;
 
@@ -275,7 +279,7 @@
 
         // Sternenhimmel erstellen
         function createStars() {
-            for (let i = 0; i < 100; i++) {
+            for (let i = 0; i < 50; i++) { // Weniger Sterne für Space-Invaders-Look
                 stars.push({
                     x: Math.random() * canvas.width,
                     y: Math.random() * canvas.height,
@@ -289,7 +293,7 @@
         function drawStars() {
             stars.forEach(star => {
                 ctx.fillStyle = '#fff';
-                ctx.fillRect(star.x, star.y, star.size + 1, star.size + 1); // Eckige Pixel-Sterne
+                ctx.fillRect(star.x, star.y, star.size, star.size);
                 star.y += star.speed;
                 if (star.y > canvas.height) {
                     star.y = 0;
@@ -300,14 +304,14 @@
 
         // Partikel-Effekte für Explosionen
         function createExplosion(x, y) {
-            for (let i = 0; i < 10; i++) {
+            for (let i = 0; i < 5; i++) { // Weniger Partikel für Retro-Look
                 particles.push({
                     x: x,
                     y: y,
-                    size: Math.random() * 5 + 2,
-                    speedX: (Math.random() - 0.5) * 5,
-                    speedY: (Math.random() - 0.5) * 5,
-                    life: 30
+                    size: Math.random() * 4 + 2,
+                    speedX: (Math.random() - 0.5) * 3,
+                    speedY: (Math.random() - 0.5) * 3,
+                    life: 20
                 });
             }
         }
@@ -322,7 +326,7 @@
                     particles.splice(i, 1);
                     continue;
                 }
-                ctx.fillStyle = `rgba(255, 69, 0, ${p.life / 30})`;
+                ctx.fillStyle = `rgba(255, 255, 255, ${p.life / 20})`; // Weiße Explosion
                 ctx.fillRect(p.x, p.y, p.size, p.size);
             }
         }
@@ -360,12 +364,12 @@
 
         function applyPowerUp(type) {
             if (type === 'fastShoot') {
-                shootCooldown = 15; // Schnellere Schüsse
+                shootCooldown = 15;
                 setTimeout(() => {
                     shootCooldown = 30;
                 }, 5000);
             } else if (type === 'shield') {
-                shieldTimer = 300; // 5 Sekunden Schild
+                shieldTimer = 300;
             } else if (type === 'extraLife') {
                 lives++;
                 livesDisplay.textContent = lives;
@@ -376,39 +380,36 @@
             if (powerUp.type === 'fastShoot') {
                 ctx.fillStyle = '#00ff00';
                 ctx.fillRect(powerUp.x, powerUp.y, powerUp.width, powerUp.height);
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(powerUp.x + 5, powerUp.y + 5, 10, 10);
             } else if (powerUp.type === 'shield') {
                 ctx.fillStyle = '#00b7eb';
                 ctx.fillRect(powerUp.x, powerUp.y, powerUp.width, powerUp.height);
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(powerUp.x + 5, powerUp.y + 5, 10, 10);
             } else if (powerUp.type === 'extraLife') {
                 ctx.fillStyle = '#ff00ff';
                 ctx.fillRect(powerUp.x, powerUp.y, powerUp.width, powerUp.height);
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(powerUp.x + 5, powerUp.y + 5, 10, 10);
             }
         }
 
-        // Retro-Arcade-Design für Spieler
+        // Spieler im Space-Invaders-Stil
         function drawPlayer() {
             if (playerHitTimer > 0 && Math.floor(playerHitTimer / 5) % 2 === 0) return;
-            ctx.fillStyle = shieldTimer > 0 ? '#00b7eb' : '#5D5CDE';
+            ctx.fillStyle = shieldTimer > 0 ? '#00b7eb' : '#00ff00'; // Grün wie Space Invaders
             ctx.fillRect(player.x, player.y, player.width, player.height);
             ctx.fillStyle = '#fff';
-            ctx.fillRect(player.x + 8, player.y - 8, 14, 8); // Größerer, pixeliger Cockpit
-            ctx.fillStyle = '#ff4500';
-            ctx.fillRect(player.x + 12, player.y + 20, 6, 6); // Eckige Düse
+            ctx.fillRect(player.x + 15, player.y - 5, 10, 5); // Kleines Cockpit
         }
 
-        // Retro-Arcade-Design für Feinde
+        // Feinde im Space-Invaders-Stil
         function drawEnemy(enemy) {
-            ctx.fillStyle = '#FF9800';
+            ctx.fillStyle = enemy.color;
             ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
             ctx.fillStyle = '#000';
-            ctx.fillRect(enemy.x + 6, enemy.y + 6, 6, 6); // Größeres, schwarzes Auge
-            ctx.fillRect(enemy.x + 18, enemy.y + 6, 6, 6); // Zweites Auge
+            ctx.fillRect(enemy.x + 5, enemy.y + 5, 5, 5); // Auge
+            ctx.fillRect(enemy.x + 15, enemy.y + 5, 5, 5); // Zweites Auge
+            if (enemy.type === 'top') {
+                ctx.fillStyle = enemy.color;
+                ctx.fillRect(enemy.x + 5, enemy.y - 5, 5, 5); // Antenne
+                ctx.fillRect(enemy.x + 15, enemy.y - 5, 5, 5);
+            }
         }
 
         // Boss-Feind
@@ -416,20 +417,20 @@
             ctx.fillStyle = '#ff0000';
             ctx.fillRect(boss.x, boss.y, boss.width, boss.height);
             ctx.fillStyle = '#000';
-            ctx.fillRect(boss.x + 20, boss.y + 20, 12, 12); // Größeres Auge
-            ctx.fillRect(boss.x + 68, boss.y + 20, 12, 12); // Zweites Auge
+            ctx.fillRect(boss.x + 20, boss.y + 20, 10, 10);
+            ctx.fillRect(boss.x + 60, boss.y + 20, 10, 10);
         }
 
-        // Retro-Arcade-Design für Kugeln
+        // Kugeln im Space-Invaders-Stil
         function drawBullet(bullet) {
-            ctx.fillStyle = '#00ffff'; // Neon-Cyan
-            ctx.fillRect(bullet.x, bullet.y, bullet.width + 2, bullet.height + 2); // Größer
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
         }
 
         // Feindliche Kugeln
         function drawEnemyBullet(bullet) {
-            ctx.fillStyle = '#ff00ff'; // Neon-Magenta
-            ctx.fillRect(bullet.x, bullet.y, bullet.width + 2, bullet.height + 2);
+            ctx.fillStyle = '#ff00ff';
+            ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
         }
 
         // Feindliche Drohnen erstellen
@@ -439,25 +440,38 @@
                     x: canvas.width / 2 - 50,
                     y: -100,
                     targetY: 50,
-                    width: 100,
-                    height: 60,
+                    width: 80,
+                    height: 50,
                     speed: 1,
                     direction: 1,
                     health: 50,
-                    shootTimer: 60
+                    shootTimer: 120 // Seltener schießen
                 };
             } else {
-                for (let i = 0; i < 10; i++) {
+                for (let i = 0; i < 8; i++) { // Weniger Feinde pro Reihe
                     for (let j = 0; j < 5; j++) {
+                        let color, type;
+                        if (j === 0) {
+                            color = '#00ff00'; // Grün für oberste Reihe
+                            type = 'top';
+                        } else if (j <= 2) {
+                            color = '#00b7eb'; // Cyan für mittlere Reihen
+                            type = 'middle';
+                        } else {
+                            color = '#ff00ff'; // Pink für untere Reihen
+                            type = 'bottom';
+                        }
                         enemies.push({
-                            x: i * 80 + 50,
-                            y: -50 - j * 50,
-                            targetY: j * 50 + 20,
+                            x: i * 60 + 50,
+                            y: -50 - j * 40,
+                            targetY: j * 40 + 20,
                             width: 30,
                             height: 20,
                             speed: 0.5 + wave * 0.2,
                             direction: 1,
-                            shootTimer: Math.random() * 200 + 100
+                            shootTimer: Math.random() * 400 + 200, // Seltener schießen
+                            color: color,
+                            type: type
                         });
                     }
                 }
@@ -632,7 +646,7 @@
                         width: 4,
                         height: 10
                     });
-                    enemies[i].shootTimer = Math.random() * 200 + 100;
+                    enemies[i].shootTimer = Math.random() * 400 + 200; // Seltener schießen
                 }
 
                 if (enemies[i].y + enemies[i].height > canvas.height) {
@@ -695,19 +709,7 @@
                     width: 4,
                     height: 10
                 });
-                enemyBullets.push({
-                    x: boss.x + 20,
-                    y: boss.y + boss.height,
-                    width: 4,
-                    height: 10
-                });
-                enemyBullets.push({
-                    x: boss.x + boss.width - 20,
-                    y: boss.y + boss.height,
-                    width: 4,
-                    height: 10
-                });
-                boss.shootTimer = 60;
+                boss.shootTimer = 120; // Seltener schießen
             }
 
             if (detectCollision(player, boss) && shieldTimer <= 0) {
@@ -766,7 +768,7 @@
             powerUps = [];
             boss = null;
             gameOverScreen.style.display = 'none';
-            resizeCanvas(); // Canvas neu skalieren
+            resizeCanvas();
             createEnemies();
             gameLoop();
         }
@@ -791,7 +793,7 @@
 
         // Spiel starten
         window.addEventListener('resize', resizeCanvas);
-        resizeCanvas(); // Initiales Skalieren
+        resizeCanvas();
         createStars();
         createEnemies();
         highscoreDisplay.textContent = highscore;
